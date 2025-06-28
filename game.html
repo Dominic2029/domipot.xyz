@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>记忆力挑战游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f5f5f5;
+        }
+        .game-header {
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            background-color: #333;
+            color: white;
+        }
+        .level-indicators {
+            display: flex;
+            width: 100%;
+            gap: 2px;
+            padding: 5px;
+        }
+        .level-indicator {
+            flex: 1;
+            height: 15px;
+            background-color: #ddd;
+            border-radius: 3px;
+        }
+        .level-indicator.correct {
+            background-color: #4CAF50;
+        }
+        .level-indicator.incorrect {
+            background-color: #f44336;
+        }
+        .game-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .game-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .game-rules {
+            max-width: 600px;
+            margin-bottom: 30px;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .start-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .start-button:hover {
+            background-color: #45a049;
+        }
+        .countdown {
+            font-size: 72px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .number-display {
+            font-size: 64px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .input-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        .number-input {
+            padding: 10px;
+            font-size: 18px;
+            margin-bottom: 15px;
+            text-align: center;
+            width: 250px;
+        }
+        .submit-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .submit-button:hover {
+            background-color: #0b7dda;
+        }
+        .result {
+            font-size: 24px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .final-score {
+            font-size: 28px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .performance {
+            font-size: 24px;
+            margin-bottom: 30px;
+            display: none;
+        }
+        .restart-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: none;
+        }
+        .restart-button:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-header">
+        <div class="level-indicators" id="levelIndicators"></div>
+    </div>
+    <div class="game-container">
+        <h1 class="game-title" id="gameTitle">记忆力挑战游戏</h1>
+        <div class="game-rules" id="gameRules">
+            <p>这是一个测试你记忆力的游戏，共有20关。</p>
+            <p>每一关会显示一串数字，你有5秒钟的时间记住它。</p>
+            <p>数字消失后，你需要输入正确的数字来通过关卡。</p>
+            <p>每过一关，数字位数会增加1位，从1位数开始到20位数结束。</p>
+            <p>第一关5分，第二关10分，依此类推，最高可得1050分。</p>
+        </div>
+        <button class="start-button" id="startButton">开始游戏</button>
+        
+        <div class="countdown" id="countdown">5</div>
+        <div class="number-display" id="numberDisplay"></div>
+        
+        <div class="input-container" id="inputContainer">
+            <input type="text" class="number-input" id="numberInput" placeholder="请输入你记住的数字">
+            <button class="submit-button" id="submitButton">提交</button>
+        </div>
+        
+        <div class="result" id="result"></div>
+        <div class="final-score" id="finalScore"></div>
+        <div class="performance" id="performance"></div>
+        <button class="restart-button" id="restartButton">再来一次</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startButton = document.getElementById('startButton');
+            const countdown = document.getElementById('countdown');
+            const numberDisplay = document.getElementById('numberDisplay');
+            const inputContainer = document.getElementById('inputContainer');
+            const numberInput = document.getElementById('numberInput');
+            const submitButton = document.getElementById('submitButton');
+            const result = document.getElementById('result');
+            const gameTitle = document.getElementById('gameTitle');
+            const gameRules = document.getElementById('gameRules');
+            const finalScore = document.getElementById('finalScore');
+            const performance = document.getElementById('performance');
+            const restartButton = document.getElementById('restartButton');
+            const levelIndicators = document.getElementById('levelIndicators');
+            
+            let currentLevel = 1;
+            let score = 0;
+            let generatedNumber = '';
+            let timer;
+            const totalLevels = 20;
+            
+            // 初始化关卡指示器
+            for (let i = 0; i < totalLevels; i++) {
+                const indicator = document.createElement('div');
+                indicator.className = 'level-indicator';
+                indicator.dataset.level = i + 1;
+                levelIndicators.appendChild(indicator);
+            }
+            
+            // 开始游戏
+            startButton.addEventListener('click', startGame);
+            
+            // 提交答案
+            submitButton.addEventListener('click', checkAnswer);
+            
+            // 重新开始游戏
+            restartButton.addEventListener('click', restartGame);
+            
+            // 生成随机数字
+            function generateRandomNumber(digits) {
+                let num = '';
+                for (let i = 0; i < digits; i++) {
+                    // 确保第一位不为0
+                    if (i === 0) {
+                        num += Math.floor(Math.random() * 9 + 1);
+                    } else {
+                        num += Math.floor(Math.random() * 10);
+                    }
+                }
+                return num;
+            }
+            
+            // 开始游戏
+            function startGame() {
+                // 隐藏开始界面
+                startButton.style.display = 'none';
+                gameTitle.style.display = 'none';
+                gameRules.style.display = 'none';
+                
+                // 显示倒计时
+                countdown.style.display = 'block';
+                
+                startLevel();
+            }
+            
+            // 开始当前关卡
+            function startLevel() {
+                // 重置UI
+                countdown.textContent = '5';
+                numberDisplay.style.display = 'none';
+                inputContainer.style.display = 'none';
+                result.style.display = 'none';
+                
+                // 生成当前关卡的随机数字
+                generatedNumber = generateRandomNumber(currentLevel);
+                
+                // 开始倒计时
+                let seconds = 5;
+                countdown.textContent = seconds;
+                
+                timer = setInterval(() => {
+                    seconds--;
+                    countdown.textContent = seconds;
+                    
+                    if (seconds <= 0) {
+                        clearInterval(timer);
+                        showNumber();
+                    }
+                }, 1000);
+            }
+            
+            // 显示数字
+            function showNumber() {
+                countdown.style.display = 'none';
+                numberDisplay.style.display = 'block';
+                numberDisplay.textContent = generatedNumber;
+                
+                // 3秒后隐藏数字，显示输入框
+                setTimeout(() => {
+                    numberDisplay.style.display = 'none';
+                    inputContainer.style.display = 'flex';
+                    numberInput.focus();
+                }, 3000);
+            }
+            
+            // 检查答案
+            function checkAnswer() {
+                const userInput = numberInput.value;
+                
+                // 更新关卡指示器
+                const levelIndicator = document.querySelector(`.level-indicator[data-level="${currentLevel}"]`);
+                
+                if (userInput === generatedNumber) {
+                    // 答对了
+                    result.textContent = '答对了！真棒！';
+                    result.style.color = '#4CAF50';
+                    levelIndicator.classList.add('correct');
+                    
+                    // 计算得分
+                    const levelScore = currentLevel * 5;
+                    score += levelScore;
+                } else {
+                    // 答错了
+                    result.textContent = `答错了，正确答案是: ${generatedNumber}`;
+                    result.style.color = '#f44336';
+                    levelIndicator.classList.add('incorrect');
+                }
+                
+                result.style.display = 'block';
+                inputContainer.style.display = 'none';
+                
+                // 检查是否完成所有关卡
+                if (currentLevel >= totalLevels) {
+                    // 游戏结束，显示总分
+                    setTimeout(showFinalResults, 2000);
+                } else {
+                    // 进入下一关
+                    currentLevel++;
+                    setTimeout(startLevel, 2000);
+                }
+                
+                // 清空输入框
+                numberInput.value = '';
+            }
+            
+            // 显示最终结果
+            function showFinalResults() {
+                finalScore.textContent = `你的最终得分是: ${score}/1050`;
+                finalScore.style.display = 'block';
+                
+                // 根据得分显示评价
+                let performanceText = '';
+                if (score >= 840) {
+                    performanceText = '你的记忆力非常优秀！';
+                    performance.style.color = '#4CAF50';
+                } else if (score >= 630) {
+                    performanceText = '你的记忆力不错！继续加油！';
+                    performance.style.color = '#2196F3';
+                } else {
+                    performanceText = '你的记忆力还有提升空间，多练习会有进步！';
+                    performance.style.color = '#f44336';
+                }
+                
+                performance.textContent = performanceText;
+                performance.style.display = 'block';
+                restartButton.style.display = 'block';
+            }
+            
+            // 重新开始游戏
+            function restartGame() {
+                // 重置游戏状态
+                currentLevel = 1;
+                score = 0;
+                
+                // 重置UI
+                finalScore.style.display = 'none';
+                performance.style.display = 'none';
+                restartButton.style.display = 'none';
+                gameTitle.style.display = 'block';
+                gameRules.style.display = 'block';
+                startButton.style.display = 'block';
+                
+                // 重置关卡指示器
+                document.querySelectorAll('.level-indicator').forEach(indicator => {
+                    indicator.className = 'level-indicator';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+    
