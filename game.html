@@ -1,364 +1,434 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>记忆力挑战游戏</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
+    <title>Memory Master - Number Recall Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        danger: '#EF4444',
+                        warning: '#F59E0B',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
         }
-        body {
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background-color: #f5f5f5;
-        }
-        .game-header {
-            display: flex;
-            justify-content: center;
-            padding: 10px;
-            background-color: #333;
-            color: white;
-        }
-        .level-indicators {
-            display: flex;
-            width: 100%;
-            gap: 2px;
-            padding: 5px;
-        }
-        .level-indicator {
-            flex: 1;
-            height: 15px;
-            background-color: #ddd;
-            border-radius: 3px;
-        }
-        .level-indicator.correct {
-            background-color: #4CAF50;
-        }
-        .level-indicator.incorrect {
-            background-color: #f44336;
-        }
-        .game-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .game-title {
-            font-size: 28px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .game-rules {
-            max-width: 600px;
-            margin-bottom: 30px;
-            text-align: center;
-            line-height: 1.6;
-        }
-        .start-button {
-            padding: 15px 30px;
-            font-size: 18px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .start-button:hover {
-            background-color: #45a049;
-        }
-        .countdown {
-            font-size: 72px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        .number-display {
-            font-size: 64px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        .input-container {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-        }
-        .number-input {
-            padding: 10px;
-            font-size: 18px;
-            margin-bottom: 15px;
-            text-align: center;
-            width: 250px;
-        }
-        .submit-button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .submit-button:hover {
-            background-color: #0b7dda;
-        }
-        .result {
-            font-size: 24px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        .final-score {
-            font-size: 28px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        .performance {
-            font-size: 24px;
-            margin-bottom: 30px;
-            display: none;
-        }
-        .restart-button {
-            padding: 15px 30px;
-            font-size: 18px;
-            background-color: #f44336;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            display: none;
-        }
-        .restart-button:hover {
-            background-color: #d32f2f;
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-flip {
+                transform-style: preserve-3d;
+                transition: transform 0.6s;
+            }
+            .card-flip.flipped {
+                transform: rotateY(180deg);
+            }
+            .countdown-pulse {
+                animation: pulse 1s infinite alternate;
+            }
+            @keyframes pulse {
+                from { transform: scale(1); opacity: 1; }
+                to { transform: scale(1.05); opacity: 0.8; }
+            }
+            .slide-in {
+                animation: slideIn 0.5s ease-out forwards;
+            }
+            @keyframes slideIn {
+                from { transform: translateY(20px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            .fade-in {
+                animation: fadeIn 0.5s ease-out forwards;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            .bounce-in {
+                animation: bounceIn 0.6s cubic-bezier(0.215, 0.610, 0.355, 1.000) forwards;
+            }
+            @keyframes bounceIn {
+                0% { transform: scale(0.3); opacity: 0; }
+                20% { transform: scale(1.1); }
+                40% { transform: scale(0.9); }
+                60% { transform: scale(1.03); opacity: 1; }
+                80% { transform: scale(0.97); }
+                100% { transform: scale(1); opacity: 1; }
+            }
         }
     </style>
 </head>
-<body>
-    <div class="game-header">
-        <div class="level-indicators" id="levelIndicators"></div>
-    </div>
-    <div class="game-container">
-        <h1 class="game-title" id="gameTitle">记忆力挑战游戏</h1>
-        <div class="game-rules" id="gameRules">
-            <p>这是一个测试你记忆力的游戏，共有20关。</p>
-            <p>每一关会显示一串数字，你有5秒钟的时间记住它。</p>
-            <p>数字消失后，你需要输入正确的数字来通过关卡。</p>
-            <p>每过一关，数字位数会增加1位，从1位数开始到20位数结束。</p>
-            <p>第一关5分，第二关10分，依此类推，最高可得1050分。</p>
+<body class="font-inter bg-gradient-to-br from-light to-blue-50 min-h-screen flex flex-col overflow-hidden">
+    <!-- Full screen container -->
+    <div class="flex-1 flex flex-col relative">
+        <!-- Game Header -->
+        <header class="bg-white/80 backdrop-blur-sm shadow-sm py-3 px-4 md:px-8">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-[clamp(1.2rem,3vw,1.8rem)] font-bold text-primary flex items-center">
+                    <i class="fa fa-brain mr-2 text-primary/80"></i>
+                    <span>Memory Master</span>
+                </h1>
+                <div id="score-display" class="text-dark/80 font-semibold text-lg hidden">
+                    Score: <span id="current-score">0</span>/1050
+                </div>
+            </div>
+        </header>
+
+        <!-- Level indicators (20 levels) -->
+        <div id="level-indicators" class="py-3 px-4 md:px-8 hidden">
+            <div class="container mx-auto flex gap-1 justify-center">
+                <!-- Levels will be generated by JS -->
+            </div>
         </div>
-        <button class="start-button" id="startButton">开始游戏</button>
-        
-        <div class="countdown" id="countdown">5</div>
-        <div class="number-display" id="numberDisplay"></div>
-        
-        <div class="input-container" id="inputContainer">
-            <input type="text" class="number-input" id="numberInput" placeholder="请输入你记住的数字">
-            <button class="submit-button" id="submitButton">提交</button>
-        </div>
-        
-        <div class="result" id="result"></div>
-        <div class="final-score" id="finalScore"></div>
-        <div class="performance" id="performance"></div>
-        <button class="restart-button" id="restartButton">再来一次</button>
+
+        <!-- Main Game Area -->
+        <main class="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative">
+            <!-- Start Screen -->
+            <div id="start-screen" class="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-6 md:p-8 text-center bounce-in">
+                <h2 class="text-[clamp(1.5rem,4vw,2.5rem)] font-bold text-primary mb-4 text-shadow">Number Recall Challenge</h2>
+                
+                <div class="mb-8 text-left space-y-3 text-dark/80">
+                    <h3 class="font-semibold text-lg text-dark border-b pb-2">How to play:</h3>
+                    <p><i class="fa fa-check-circle text-secondary mr-2"></i> There are 20 levels in total</p>
+                    <p><i class="fa fa-check-circle text-secondary mr-2"></i> Each level shows a number for 5 seconds</p>
+                    <p><i class="fa fa-check-circle text-secondary mr-2"></i> Level 1 shows 1 digit, Level 2 shows 2 digits, up to 20 digits</p>
+                    <p><i class="fa fa-check-circle text-secondary mr-2"></i> Remember the number and enter it correctly after the countdown</p>
+                    <p><i class="fa fa-check-circle text-secondary mr-2"></i> Level 1 is worth 5 points, Level 2 is 10 points, up to 100 points for Level 20</p>
+                    <p><i class="fa fa-check-circle text-secondary mr-2"></i> Score 840+ for an Excellent rating!</p>
+                </div>
+                
+                <button id="start-button" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                    Start Challenge <i class="fa fa-play ml-2"></i>
+                </button>
+            </div>
+
+            <!-- Game Screen -->
+            <div id="game-screen" class="max-w-2xl w-full flex flex-col items-center hidden">
+                <div id="level-display" class="text-dark/70 font-medium mb-2">
+                    Level <span id="current-level">1</span>/20
+                </div>
+                
+                <div id="countdown" class="text-warning text-2xl font-bold mb-6 hidden countdown-pulse">
+                    5
+                </div>
+                
+                <div id="number-display" class="text-[clamp(2rem,8vw,5rem)] font-bold text-dark mb-8 min-h-[100px] flex items-center justify-center transition-all duration-300">
+                    <!-- Number will be displayed here -->
+                </div>
+                
+                <div id="input-area" class="w-full max-w-md hidden fade-in">
+                    <input type="text" id="number-input" 
+                        class="w-full px-4 py-3 text-xl border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent mb-4 transition-all"
+                        placeholder="Enter the number you saw..." 
+                        inputmode="numeric" 
+                        pattern="[0-9]*">
+                    
+                    <button id="submit-button" class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-4 rounded-lg shadow hover:shadow-md transform hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        Submit <i class="fa fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+                
+                <div id="feedback" class="mt-6 text-center hidden slide-in">
+                    <!-- Feedback will be displayed here -->
+                </div>
+                
+                <button id="next-button" class="mt-6 bg-secondary hover:bg-secondary/90 text-white font-bold py-2 px-6 rounded-lg shadow hover:shadow-md transform hover:-translate-y-0.5 transition-all duration-300 focus:outline-none hidden slide-in">
+                    Next Level <i class="fa fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+
+            <!-- End Screen -->
+            <div id="end-screen" class="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-6 md:p-8 text-center hidden bounce-in">
+                <h2 class="text-[clamp(1.5rem,4vw,2.5rem)] font-bold text-primary mb-2 text-shadow">Challenge Complete!</h2>
+                
+                <div class="mb-6">
+                    <div class="text-4xl font-bold text-dark mb-1">Your Score</div>
+                    <div class="text-[clamp(2rem,6vw,4rem)] font-bold text-primary" id="final-score">0</div>
+                    <div class="text-lg text-dark/70">out of 1050</div>
+                </div>
+                
+                <div class="mb-8 py-4 px-6 rounded-xl" id="rating-container">
+                    <div class="text-xl font-semibold" id="rating-text">Good Job!</div>
+                </div>
+                
+                <div class="space-y-3">
+                    <button id="restart-button" class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/50">
+                        Play Again <i class="fa fa-refresh ml-2"></i>
+                    </button>
+                    
+                    <button id="home-button" class="w-full bg-gray-200 hover:bg-gray-300 text-dark font-bold py-3 px-4 rounded-lg shadow hover:shadow-md transform hover:-translate-y-1 transition-all duration-300 focus:outline-none">
+                        Return to Home <i class="fa fa-home ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-dark/5 py-3 px-4 text-center text-dark/60 text-sm">
+            <p>© 2023 ojopus.top | Memory Training Challenge</p>
+        </footer>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const startButton = document.getElementById('startButton');
-            const countdown = document.getElementById('countdown');
-            const numberDisplay = document.getElementById('numberDisplay');
-            const inputContainer = document.getElementById('inputContainer');
-            const numberInput = document.getElementById('numberInput');
-            const submitButton = document.getElementById('submitButton');
-            const result = document.getElementById('result');
-            const gameTitle = document.getElementById('gameTitle');
-            const gameRules = document.getElementById('gameRules');
-            const finalScore = document.getElementById('finalScore');
-            const performance = document.getElementById('performance');
-            const restartButton = document.getElementById('restartButton');
-            const levelIndicators = document.getElementById('levelIndicators');
+        // Game state
+        const gameState = {
+            currentLevel: 1,
+            totalLevels: 20,
+            score: 0,
+            currentNumber: '',
+            isPlaying: false
+        };
+
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const endScreen = document.getElementById('end-screen');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const homeButton = document.getElementById('home-button');
+        const numberDisplay = document.getElementById('number-display');
+        const inputArea = document.getElementById('input-area');
+        const numberInput = document.getElementById('number-input');
+        const submitButton = document.getElementById('submit-button');
+        const feedback = document.getElementById('feedback');
+        const nextButton = document.getElementById('next-button');
+        const countdown = document.getElementById('countdown');
+        const currentLevelEl = document.getElementById('current-level');
+        const levelIndicators = document.getElementById('level-indicators');
+        const scoreDisplay = document.getElementById('score-display');
+        const currentScoreEl = document.getElementById('current-score');
+        const finalScoreEl = document.getElementById('final-score');
+        const ratingContainer = document.getElementById('rating-container');
+        const ratingText = document.getElementById('rating-text');
+
+        // Initialize level indicators
+        function initializeLevelIndicators() {
+            const container = levelIndicators.querySelector('div');
+            container.innerHTML = '';
             
-            let currentLevel = 1;
-            let score = 0;
-            let generatedNumber = '';
-            let timer;
-            const totalLevels = 20;
-            
-            // 初始化关卡指示器
-            for (let i = 0; i < totalLevels; i++) {
+            for (let i = 1; i <= gameState.totalLevels; i++) {
                 const indicator = document.createElement('div');
-                indicator.className = 'level-indicator';
-                indicator.dataset.level = i + 1;
-                levelIndicators.appendChild(indicator);
+                indicator.id = `level-${i}`;
+                indicator.className = 'w-6 h-6 rounded-full border-2 border-primary/30 flex-shrink-0 transition-all duration-300';
+                container.appendChild(indicator);
+            }
+        }
+
+        // Generate a random number with specified digits
+        function generateRandomNumber(digits) {
+            let min = 10 ** (digits - 1);
+            let max = (10 ** digits) - 1;
+            
+            // For 1 digit, include 0
+            if (digits === 1) {
+                min = 0;
             }
             
-            // 开始游戏
-            startButton.addEventListener('click', startGame);
+            const number = Math.floor(Math.random() * (max - min + 1)) + min;
+            return number.toString();
+        }
+
+        // Start the game
+        function startGame() {
+            // Reset game state
+            gameState.currentLevel = 1;
+            gameState.score = 0;
+            gameState.isPlaying = true;
             
-            // 提交答案
-            submitButton.addEventListener('click', checkAnswer);
+            // Update UI
+            startScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            levelIndicators.classList.remove('hidden');
+            scoreDisplay.classList.remove('hidden');
+            currentScoreEl.textContent = gameState.score;
             
-            // 重新开始游戏
-            restartButton.addEventListener('click', restartGame);
+            // Start first level
+            startLevel(gameState.currentLevel);
+        }
+
+        // Start a specific level
+        function startLevel(level) {
+            // Update UI
+            currentLevelEl.textContent = level;
+            numberDisplay.textContent = '';
+            inputArea.classList.add('hidden');
+            feedback.classList.add('hidden');
+            nextButton.classList.add('hidden');
+            numberInput.value = '';
             
-            // 生成随机数字
-            function generateRandomNumber(digits) {
-                let num = '';
-                for (let i = 0; i < digits; i++) {
-                    // 确保第一位不为0
-                    if (i === 0) {
-                        num += Math.floor(Math.random() * 9 + 1);
-                    } else {
-                        num += Math.floor(Math.random() * 10);
-                    }
-                }
-                return num;
-            }
+            // Generate number with digits equal to level
+            gameState.currentNumber = generateRandomNumber(level);
             
-            // 开始游戏
-            function startGame() {
-                // 隐藏开始界面
-                startButton.style.display = 'none';
-                gameTitle.style.display = 'none';
-                gameRules.style.display = 'none';
+            // Show number after a short delay
+            setTimeout(() => {
+                numberDisplay.textContent = gameState.currentNumber;
+                numberDisplay.classList.add('bounce-in');
                 
-                // 显示倒计时
-                countdown.style.display = 'block';
-                
-                startLevel();
-            }
+                // Start countdown after number is displayed
+                startCountdown(5);
+            }, 500);
+        }
+
+        // Start countdown
+        function startCountdown(seconds) {
+            let count = seconds;
+            countdown.textContent = count;
+            countdown.classList.remove('hidden');
             
-            // 开始当前关卡
-            function startLevel() {
-                // 重置UI
-                countdown.textContent = '5';
-                numberDisplay.style.display = 'none';
-                inputContainer.style.display = 'none';
-                result.style.display = 'none';
+            const countdownInterval = setInterval(() => {
+                count--;
+                countdown.textContent = count;
                 
-                // 生成当前关卡的随机数字
-                generatedNumber = generateRandomNumber(currentLevel);
-                
-                // 开始倒计时
-                let seconds = 5;
-                countdown.textContent = seconds;
-                
-                timer = setInterval(() => {
-                    seconds--;
-                    countdown.textContent = seconds;
-                    
-                    if (seconds <= 0) {
-                        clearInterval(timer);
-                        showNumber();
-                    }
-                }, 1000);
-            }
-            
-            // 显示数字
-            function showNumber() {
-                countdown.style.display = 'none';
-                numberDisplay.style.display = 'block';
-                numberDisplay.textContent = generatedNumber;
-                
-                // 3秒后隐藏数字，显示输入框
-                setTimeout(() => {
-                    numberDisplay.style.display = 'none';
-                    inputContainer.style.display = 'flex';
-                    numberInput.focus();
-                }, 3000);
-            }
-            
-            // 检查答案
-            function checkAnswer() {
-                const userInput = numberInput.value;
-                
-                // 更新关卡指示器
-                const levelIndicator = document.querySelector(`.level-indicator[data-level="${currentLevel}"]`);
-                
-                if (userInput === generatedNumber) {
-                    // 答对了
-                    result.textContent = '答对了！真棒！';
-                    result.style.color = '#4CAF50';
-                    levelIndicator.classList.add('correct');
-                    
-                    // 计算得分
-                    const levelScore = currentLevel * 5;
-                    score += levelScore;
-                } else {
-                    // 答错了
-                    result.textContent = `答错了，正确答案是: ${generatedNumber}`;
-                    result.style.color = '#f44336';
-                    levelIndicator.classList.add('incorrect');
+                // Change color as time runs out
+                if (count <= 2) {
+                    countdown.classList.add('text-danger');
+                    countdown.classList.remove('text-warning');
                 }
                 
-                result.style.display = 'block';
-                inputContainer.style.display = 'none';
-                
-                // 检查是否完成所有关卡
-                if (currentLevel >= totalLevels) {
-                    // 游戏结束，显示总分
-                    setTimeout(showFinalResults, 2000);
-                } else {
-                    // 进入下一关
-                    currentLevel++;
-                    setTimeout(startLevel, 2000);
+                if (count <= 0) {
+                    clearInterval(countdownInterval);
+                    countdown.classList.add('hidden');
+                    countdown.classList.remove('text-danger');
+                    countdown.classList.add('text-warning');
+                    numberDisplay.classList.remove('bounce-in');
+                    numberDisplay.textContent = '';
+                    showInputArea();
                 }
-                
-                // 清空输入框
-                numberInput.value = '';
+            }, 1000);
+        }
+
+        // Show input area for user to enter number
+        function showInputArea() {
+            inputArea.classList.remove('hidden');
+            numberInput.focus();
+        }
+
+        // Check user's answer
+        function checkAnswer() {
+            const userAnswer = numberInput.value.trim();
+            const isCorrect = userAnswer === gameState.currentNumber;
+            
+            // Update score
+            if (isCorrect) {
+                const points = gameState.currentLevel * 5;
+                gameState.score += points;
+                currentScoreEl.textContent = gameState.score;
             }
             
-            // 显示最终结果
-            function showFinalResults() {
-                finalScore.textContent = `你的最终得分是: ${score}/1050`;
-                finalScore.style.display = 'block';
-                
-                // 根据得分显示评价
-                let performanceText = '';
-                if (score >= 840) {
-                    performanceText = '你的记忆力非常优秀！';
-                    performance.style.color = '#4CAF50';
-                } else if (score >= 630) {
-                    performanceText = '你的记忆力不错！继续加油！';
-                    performance.style.color = '#2196F3';
-                } else {
-                    performanceText = '你的记忆力还有提升空间，多练习会有进步！';
-                    performance.style.color = '#f44336';
-                }
-                
-                performance.textContent = performanceText;
-                performance.style.display = 'block';
-                restartButton.style.display = 'block';
+            // Update level indicator
+            const levelIndicator = document.getElementById(`level-${gameState.currentLevel}`);
+            if (isCorrect) {
+                levelIndicator.className = 'w-6 h-6 rounded-full bg-secondary border-2 border-secondary flex-shrink-0 transition-all duration-300';
+                feedback.innerHTML = `<div class="text-secondary font-bold text-xl"><i class="fa fa-check-circle mr-2"></i> Correct!</div>
+                                    <div class="text-dark/70">+${gameState.currentLevel * 5} points</div>`;
+            } else {
+                levelIndicator.className = 'w-6 h-6 rounded-full bg-danger border-2 border-danger flex-shrink-0 transition-all duration-300';
+                feedback.innerHTML = `<div class="text-danger font-bold text-xl"><i class="fa fa-times-circle mr-2"></i> Incorrect</div>
+                                    <div class="text-dark/70">The number was: ${gameState.currentNumber}</div>`;
             }
             
-            // 重新开始游戏
-            function restartGame() {
-                // 重置游戏状态
-                currentLevel = 1;
-                score = 0;
-                
-                // 重置UI
-                finalScore.style.display = 'none';
-                performance.style.display = 'none';
-                restartButton.style.display = 'none';
-                gameTitle.style.display = 'block';
-                gameRules.style.display = 'block';
-                startButton.style.display = 'block';
-                
-                // 重置关卡指示器
-                document.querySelectorAll('.level-indicator').forEach(indicator => {
-                    indicator.className = 'level-indicator';
-                });
+            // Show feedback
+            inputArea.classList.add('hidden');
+            feedback.classList.remove('hidden');
+            
+            // Check if game is finished
+            if (gameState.currentLevel === gameState.totalLevels) {
+                setTimeout(endGame, 2000);
+            } else {
+                nextButton.classList.remove('hidden');
+            }
+        }
+
+        // Go to next level
+        function nextLevel() {
+            gameState.currentLevel++;
+            startLevel(gameState.currentLevel);
+        }
+
+        // End the game and show results
+        function endGame() {
+            gameState.isPlaying = false;
+            
+            // Calculate rating
+            let rating, ratingClass;
+            if (gameState.score >= 840) {
+                rating = 'Excellent!';
+                ratingClass = 'bg-secondary/20 text-secondary border border-secondary/30';
+            } else if (gameState.score >= 630) {
+                rating = 'Very Good';
+                ratingClass = 'bg-primary/20 text-primary border border-primary/30';
+            } else if (gameState.score >= 420) {
+                rating = 'Good';
+                ratingClass = 'bg-warning/20 text-warning border border-warning/30';
+            } else {
+                rating = 'Keep Practicing';
+                ratingClass = 'bg-gray-200 text-gray-700 border border-gray-300';
+            }
+            
+            // Update UI
+            gameScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+            finalScoreEl.textContent = gameState.score;
+            ratingText.textContent = rating;
+            ratingContainer.className = `mb-8 py-4 px-6 rounded-xl ${ratingClass}`;
+        }
+
+        // Restart the game
+        function restartGame() {
+            endScreen.classList.add('hidden');
+            startGame();
+        }
+
+        // Return to home (parent page)
+        function returnToHome() {
+            if (window.parent && window.parent.postMessage) {
+                window.parent.postMessage('returnToHome', '*');
+            } else {
+                // Fallback if in a standalone window
+                alert('Would return to home page in a full implementation');
+            }
+        }
+
+        // Event Listeners
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', restartGame);
+        homeButton.addEventListener('click', returnToHome);
+        submitButton.addEventListener('click', checkAnswer);
+        nextButton.addEventListener('click', nextLevel);
+        
+        // Allow Enter key to submit answer
+        numberInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
             }
         });
+
+        // Handle window resize to ensure full screen
+        function handleResize() {
+            document.documentElement.style.height = `${window.innerHeight}px`;
+        }
+
+        // Initialize
+        window.addEventListener('resize', handleResize);
+        handleResize(); // Set initial size
+        initializeLevelIndicators();
     </script>
 </body>
 </html>
-    
